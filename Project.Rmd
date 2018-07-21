@@ -51,8 +51,9 @@ predrf <- predict(modrf, SubTest)
 cmrf <- confusionMatrix(SubTest$classe,predrf)
 cmrf$table
 cmrf$overall
-
 ```
+
+The out of sample error is 100% - accuracy = 0.54 %.
 
 ## Classification tree
 
@@ -78,6 +79,7 @@ cmct$overall
 
 ```
 
+The out of sample error is 100% - accuracy = 51,06%.
 
 ## Apply best model to test data
 
