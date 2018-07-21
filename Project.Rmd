@@ -1,0 +1,90 @@
+---
+title: "Practical Machine Learning Project"
+author: "Me"
+date: "21 Juli 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, we will use the data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants and predict how well they an activity.
+## Data preparation
+
+Data of the training and test set is loaded. Afterwards, the columns that contain only NAs are removed.
+
+```{r readData1, cache=TRUE}
+library(caret)
+training <- read.csv("pml-training.csv")
+testing <- read.csv("pml-testing.csv")
+
+noNAtraining <- subset(training, select=colMeans(is.na(training)) == 0) 
+
+str(noNAtraining)
+```
+Looking at the output of the remaining data, there are still variables that do not contain much information. These columns are removed manually. The remaining data set is split into a training and a test set for model building.
+
+```{r readData2, cache=TRUE}
+
+trainData <- noNAtraining[,c(2,8,9,10,11,21:42, 49:51,61:73,83:93)]
+
+set.seed(455667)
+inTrain <- createDataPartition(trainData$classe, p=0.7, list=FALSE)
+SubTrain <- trainData[inTrain,]
+SubTest <- trainData[-inTrain,]
+dim(SubTrain)
+dim(SubTest)
+```
+  
+## Random forest
+
+A random forest model is trained using the SubTrain data.
+
+```{r RF, cache = TRUE}
+tc <- trainControl(method="cv", number=5)
+modrf <- train(classe ~ ., method = "rf", data=SubTrain, trControl=tc, verbose=FALSE)
+```
+Calculate the confusion matrix and the accuracy of the model.
+
+```{r RFcm, cache = TRUE}
+predrf <- predict(modrf, SubTest)
+cmrf <- confusionMatrix(SubTest$classe,predrf)
+cmrf$table
+cmrf$overall
+
+```
+
+## Classification tree
+
+As the calculation of the random forest model was very time consuming, also a simple classification tree is calculated.
+
+```{r CT, cache = TRUE}
+modct <- train(classe ~ ., method = "rpart", data=SubTrain)
+```
+
+Plot the classifiaction tree.
+```{r CTplot, cache = TRUE}
+library(rattle)
+fancyRpartPlot(modct$finalModel)
+```
+
+Calculate the confusion matrix and the accuracy of the model.
+
+```{r CTcm, cache = TRUE}
+predct <- predict(modct, SubTest)
+cmct <- confusionMatrix(SubTest$classe,predct)
+cmct$table
+cmct$overall
+
+```
+
+
+## Apply best model to test data
+
+As the results of the random forest model were much better than the results of the classification tree, the test data will be processed with the random forest model.
+
+```{r RFquiz, cache = TRUE}
+predict(modrf, testing)
+```
+
+
